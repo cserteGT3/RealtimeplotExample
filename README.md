@@ -17,6 +17,35 @@ The following buttons work:
 Would be nice of it would work for different JSONs.
 For that, later I would use command-line arguments (probably).
 
+## Code
+
+```julia
+msgstart = "{\"actual_q\": "
+msgmid = ", \"actual_qd\": "
+msgend = "}"
+a1 = rand(12)
+
+λ = 100 .*rand(12)
+i = 0
+while isopen(socket) && client_enabled
+    println(socket, msgstart, a1[1:6], msgmid, a1[7:12], msgend)
+    a1 = rand(12) .*λ
+
+    if i > 1300
+        λ = 100 .*rand(12)
+        i = 0
+    end
+    i +=1
+    sleep(sleeptime)
+end
+```
+This part of the code scales the values to simulate the changing values.
+This is needed because it's possible that we get values that are out of the current range.
+For 1300 iterations the same `λ` is used, because the plot is "1250 wide".
+On the example picture this can be seen at around x=900.
+
+![](example.png)
+
 ## Problems/questions
 
 * One of my problems is that everything is global variable, because I couldn't find another way to do this. I feel this fragile.

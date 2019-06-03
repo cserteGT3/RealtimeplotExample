@@ -18,10 +18,19 @@ function clienttask()
     msgstart = "{\"actual_q\": "
     msgmid = ", \"actual_qd\": "
     msgend = "}"
-    a1 = 100 .*rand(12)
+    a1 = rand(12)
+
+    λ = 100 .*rand(12)
+    i = 0
     while isopen(socket) && client_enabled
         println(socket, msgstart, a1[1:6], msgmid, a1[7:12], msgend)
-        a1 = 100 .*rand(12)
+        a1 = rand(12) .*λ
+
+        if i > 1300
+            λ = 100 .*rand(12)
+            i = 0
+        end
+        i +=1
         sleep(sleeptime)
     end
     close(socket)
