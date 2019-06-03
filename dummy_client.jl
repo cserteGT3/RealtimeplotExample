@@ -28,12 +28,8 @@ function clienttask()
     @info "Client socket closed, task finished."
 end
 
-SERVER_PORT = 4000
-sleeptime = 1
-client_enabled = true
-
-client_task = Task(clienttask)
-schedule(client_task)
+# client_task = Task(clienttask)
+# schedule(client_task)
 
 # shut down with:
 # client_enabled = false
