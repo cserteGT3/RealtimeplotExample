@@ -36,9 +36,3 @@ function clienttask()
     close(socket)
     @info "Client socket closed, task finished."
 end
-
-# client_task = Task(clienttask)
-# schedule(client_task)
-
-# shut down with:
-# client_enabled = false

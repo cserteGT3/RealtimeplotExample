@@ -15,9 +15,7 @@ const input_string = Node("")
 # Stores the parsed vector.
 const input_vector = Node(zeros(6))
 
-# latest plot time.
-#const lastUpdate = Node(time_ns());
-
+# latest plot time. it's value is not used
 const lastUpdate_ = Node(time_ns());
 
 """
@@ -41,14 +39,17 @@ function servertask()
     close(server)
     @info "RTDE server accepted: $(getpeername(socket)[1])."
     while isopen(socket) && INPUT_SOCKET_EN[]
+        # messages are separated by newline
         input_string[] = readline(socket)
     end
     close(socket)
     @info "RTDE socket closed, task finished."
 end
 
+# at a 125Hz this means the last 10 seconds
 const MAX_SIZE = 1250;
 
+# 6 arrays for the 6 subplots
 FxV = rand(MAX_SIZE);
 FyV = rand(MAX_SIZE);
 FzV = rand(MAX_SIZE);
@@ -74,7 +75,6 @@ s6 = lines(tzNode);
 
 # put in an array to handle the axes and the limit updates easier
 sArr = [s1, s2, s3, s4, s5, s6];
-#yArr = ["Fx [N]", "Fy [N]", "Fz [N]", "Tx [Nm]", "Ty [Nm]", "Tz [Nm]"];
 yArr = ["$i" for i in 1:6]
 
 scene = vbox(hbox(sArr[3], sArr[2], sArr[1]), hbox(sArr[6], sArr[5], sArr[4]));
@@ -83,6 +83,7 @@ for i in 1:6
     sArr[i][Axis][:names][:axisnames] = ("Time", yArr[i]);
 end
 
+# this function makes a "fix sized" array
 function pushTo!(A, newX, maxSize)
     if size(A, 1) < maxSize
         push!(A, newX)
@@ -91,8 +92,6 @@ function pushTo!(A, newX, maxSize)
         push!(A, newX)
     end
 end
-
-## RTDE getters
 
 """
     getJSONvalue(str, jsonid)
@@ -110,6 +109,8 @@ function getJSONvalue(str, jsonid)
     end
 end
 
+# this called every time when a new message is parsed
+# updates the vectors (not the observables)
 function updateplotvectors(f)
     pushTo!(FxV, f[1], MAX_SIZE)
     pushTo!(FyV, f[2], MAX_SIZE)
@@ -123,9 +124,12 @@ function updateplotvectors(f)
     # save the time in seconds - not used currently
     ttt = (current_time-startUp)/1000000000
     #pushTo!(tV, ttt, MAX_SIZE)
+
+    # lastUpdate_ is used to trigger further updates (but it is throttled down)
     lastUpdate_[] = current_time
 end
 
+# this function updates the observables (= the plot itself)
 function updatePlot(val)
     fxNode[] = FxV
     fyNode[] = FyV
@@ -140,17 +144,25 @@ function updatePlot(val)
     AbstractPlotting.update!(scene)
 end
 
-# Interactivity functions and atomic variables
+# JSON names
 const JOINT = "actual_q"
 const JOINTd = "actual_qd"
 
+# throttle plot updates to update_time
 update_time = 0.25; # seconds
 lastUpdate = throttle(update_time, lastUpdate_)
 
+# process the input string
 h_input = on(str->getJSONvalue(str, JOINT), input_string)
 
+# when an input string is processed, update the vectors
 h_array = on(updateplotvectors, input_vector)
+# when the throttled observable updates, update the plot
 h_plot = on(updatePlot, lastUpdate)
+
+# Interactivity functions and atomic variables
+# These are for the buttons: p, r, s
+# atomic variables are used to keep the state consistent
 
 const isForceArrayUpdating = Threads.Atomic{Bool}(true)
 const isSaveRunning = Threads.Atomic{Bool}(false)
@@ -195,9 +207,6 @@ function saveForceValues(atomic_var)
     end
 end
 
-#off(lastUpdate, h_plot)
-#on(println, lastUpdate)
-
 # Button handling
 
 h_buttons = on(events(scene).keyboardbuttons) do button
@@ -211,11 +220,3 @@ h_buttons = on(events(scene).keyboardbuttons) do button
         updatePlot(lastUpdate[])
     end
 end
-
-# Turn off buttons
-# off(events(scene).keyboardbuttons, h_buttons)
-
-# servtask = Task(servertask)
-# const startUp = time_ns()
-# scene
-# schedule(servtask)

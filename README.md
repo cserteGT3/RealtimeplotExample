@@ -5,6 +5,7 @@ Working on real time plotting with Julia and Makie.
 
 The main goal is real time plotting of some values parsed from a JSON string, which we get via TCP.
 Different values are in the JSON, but the value is always a 6 long array of real numbers.
+The frequency of getting the values is around 125 Hz.
 
 I want to pause/restart plotting and also to save the plotted variables.
 Pausing the plot means here to not update the plot.
